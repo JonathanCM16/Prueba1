@@ -85,6 +85,9 @@
     let score = 0;
     let interval;
 
+    const snoopyImg = new Image();
+    snoopyImg.src = 'sticker-png-snoopy-thumbnail.png'; // Asegúrate que la imagen esté en la misma carpeta
+
     function startGame() {
       document.getElementById("game-container").style.display = "block";
       const canvas = document.getElementById("gameCanvas");
@@ -101,16 +104,15 @@
       interval = setInterval(() => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Obstáculo
-        ctx.fillStyle = "red";
-        ctx.fillRect(obstacleX, 160, 20, 40);
+        // Dibuja obstáculo (Snoopy)
+        ctx.drawImage(snoopyImg, obstacleX, 130, 40, 60);
         obstacleX -= 5;
-        if (obstacleX < -20) {
+        if (obstacleX < -40) {
           obstacleX = 600;
           score++;
         }
 
-        // Dino
+        // Dino (el cuadrado verde que salta)
         if (isJumping) {
           jumpHeight += 5;
           dinoY -= 5;
@@ -134,11 +136,11 @@
         ctx.font = "16px Arial";
         ctx.fillText("Puntaje: " + score, 500, 20);
 
-        // Colisión
+        // Colisión (básica)
         if (
           obstacleX < 90 &&
-          obstacleX > 50 &&
-          dinoY > 140
+          obstacleX + 40 > 50 &&
+          dinoY > 130
         ) {
           clearInterval(interval);
           alert("¡Perdiste! Puntaje final: " + score);
