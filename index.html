@@ -87,21 +87,18 @@
 </head>
 <body>
 
-  <!-- Pantalla de inicio -->
   <div id="pantalla-inicio" class="pantalla">
     <img class="imagen-principal" src="lamasdramas.jpg" alt="La persona más dramática de TAMSA">
     <div class="texto-grande">
       Esta persona es la más dramática de TENARIS TAMSA
     </div>
-    <button onclick="iniciarJuego()">Jugar</button>
+    <button onclick="iniciarJuego()">\u00a1Jugar!</button>
   </div>
 
-  <!-- Pantalla de juego -->
   <div id="pantalla-juego" class="pantalla">
     <canvas id="gameCanvas"></canvas>
   </div>
 
-  <!-- Pantalla de fin -->
   <div id="pantalla-fin" class="pantalla">
     <div class="puntaje-final" id="textoPuntaje"></div>
     <button onclick="reiniciarJuego()">Jugar de nuevo</button>
@@ -115,6 +112,16 @@
     let obstacles = [];
     let obstacleSpeed = 8;
     let snoopyY = 0;
+    let nubes = [];
+
+    for (let i = 0; i < 5; i++) {
+      nubes.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * (window.innerHeight / 2),
+        velocidad: 0.5 + Math.random() * 1,
+        tamaño: 40 + Math.random() * 30
+      });
+    }
 
     function mostrarPantalla(id) {
       document.querySelectorAll(".pantalla").forEach(div => div.style.display = "none");
@@ -149,10 +156,46 @@
       obstacles.push({ x: canvas.width, y: canvas.height - 60, width: 30, height: 40 });
     }
 
-    function juegoLoop() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function dibujarNube(x, y, tamanio) {
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.ellipse(x, y, tamanio, tamanio * 0.6, 0, 0, Math.PI * 2);
+      ctx.ellipse(x + tamanio * 0.6, y - tamanio * 0.3, tamanio * 0.8, tamanio * 0.5, 0, 0, Math.PI * 2);
+      ctx.ellipse(x + tamanio * 1.2, y, tamanio, tamanio * 0.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
-      // Física de salto
+    function dibujarCasita(obs) {
+      ctx.fillStyle = "red";
+      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+      // Techo tipo triángulo
+      ctx.fillStyle = "brown";
+      ctx.beginPath();
+      ctx.moveTo(obs.x - 5, obs.y); // punto izquierdo
+      ctx.lineTo(obs.x + obs.width / 2, obs.y - obs.height / 2); // pico superior
+      ctx.lineTo(obs.x + obs.width + 5, obs.y); // punto derecho
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function juegoLoop() {
+      ctx.fillStyle = "#87CEEB";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      nubes.forEach(nube => {
+        nube.x -= nube.velocidad;
+        if (nube.x + nube.tamaño * 2 < 0) {
+          nube.x = canvas.width + Math.random() * 200;
+          nube.y = Math.random() * (canvas.height / 2);
+          nube.velocidad = 0.5 + Math.random() * 1;
+          nube.tamaño = 40 + Math.random() * 30;
+        }
+        dibujarNube(nube.x, nube.y, nube.tamaño);
+      });
+
+      ctx.clearRect(0, canvas.height - 10, canvas.width, 10);
+
       velocity += gravity;
       snoopyY += velocity;
 
@@ -162,17 +205,14 @@
         onGround = true;
       }
 
-      // Obstáculos
       if (Math.random() < 0.02) crearObstaculo();
 
       for (let i = 0; i < obstacles.length; i++) {
         const obs = obstacles[i];
         obs.x -= obstacleSpeed;
 
-        ctx.fillStyle = "red";
-        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+        dibujarCasita(obs);
 
-        // Colisión
         if (
           obs.x < 100 &&
           obs.x + obs.width > 50 &&
@@ -180,11 +220,10 @@
         ) {
           clearInterval(interval);
           mostrarPantalla("pantalla-fin");
-          document.getElementById("textoPuntaje").innerText = "\u00a1 Perdiste! Puntaje final: " + score;
+          document.getElementById("textoPuntaje").innerText = "\u00a1Perdiste! Puntaje final: " + score;
           return;
         }
 
-        // Pasa obstáculo
         if (obs.x + obs.width < 0) {
           obstacles.splice(i, 1);
           i--;
@@ -193,14 +232,11 @@
         }
       }
 
-      // Snoopy
       ctx.drawImage(snoopyImg, 50, snoopyY, 50, 50);
 
-      // Suelo
       ctx.fillStyle = "black";
       ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
 
-      // Puntaje
       ctx.fillStyle = "black";
       ctx.font = "20px Arial";
       ctx.fillText("Puntaje: " + score, canvas.width - 150, 30);
