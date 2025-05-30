@@ -3,21 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Página de la persona más dramática de TAMSA</title>
+  <title>Juego del Snoopy Dramático</title>
   <style>
     * {
       box-sizing: border-box;
     }
 
-    body {
+    body, html {
       margin: 0;
+      padding: 0;
       font-family: Arial, sans-serif;
       background-color: #f0f0f0;
-      display: flex;
-      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+
+    .pantalla {
+      display: none;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #pantalla-inicio {
+      display: flex;
+      background-color: #f0f0f0;
+    }
+
+    #pantalla-juego {
+      background-color: white;
+    }
+
+    #pantalla-fin {
+      background-color: #222;
+      color: white;
     }
 
     .imagen-principal {
@@ -53,48 +74,71 @@
       background-color: #0056b3;
     }
 
-    #game-container {
-      display: none;
-      margin-top: 30px;
+    #gameCanvas {
+      background-color: #fff;
+      display: block;
     }
 
-    #gameCanvas {
-      background-color: white;
-      border: 2px solid #000;
+    .puntaje-final {
+      font-size: 2rem;
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
 
-  <img class="imagen-principal" src="lamasdramas.jpg" alt="La persona más dramática de TAMSA">
-
-  <div class="texto-grande">
-    Esta persona es la más dramática de TENARIS TAMSA
+  <!-- Pantalla de inicio -->
+  <div id="pantalla-inicio" class="pantalla">
+    <img class="imagen-principal" src="lamasdramas.jpg" alt="La persona más dramática de TAMSA">
+    <div class="texto-grande">
+      Esta persona es la más dramática de TENARIS TAMSA
+    </div>
+    <button onclick="iniciarJuego()">¡Jugar!</button>
   </div>
 
-  <button onclick="startGame()">¡Jugar!</button>
+  <!-- Pantalla de juego -->
+  <div id="pantalla-juego" class="pantalla">
+    <canvas id="gameCanvas"></canvas>
+  </div>
 
-  <div id="game-container">
-    <canvas id="gameCanvas" width="600" height="200"></canvas>
+  <!-- Pantalla de fin -->
+  <div id="pantalla-fin" class="pantalla">
+    <div class="puntaje-final" id="textoPuntaje"></div>
+    <button onclick="reiniciarJuego()">Jugar de nuevo</button>
   </div>
 
   <script>
+    let canvas, ctx, snoopyImg, interval;
     let isJumping = false;
     let jumpHeight = 0;
     let obstacleX = 600;
-    let score = 0;
     let obstacleSpeed = 5;
-    let interval;
+    let score = 0;
+    let dinoY = 150;
 
-    const snoopyImg = new Image();
-    snoopyImg.src = 'sticker-png-snoopy-thumbnail.png'; // Reemplaza con la ruta de tu imagen de Snoopy
+    function mostrarPantalla(id) {
+      document.querySelectorAll(".pantalla").forEach(div => div.style.display = "none");
+      document.getElementById(id).style.display = "flex";
+    }
 
-    function startGame() {
-      document.getElementById("game-container").style.display = "block";
-      const canvas = document.getElementById("gameCanvas");
-      const ctx = canvas.getContext("2d");
+    function iniciarJuego() {
+      mostrarPantalla("pantalla-juego");
+      canvas = document.getElementById("gameCanvas");
+      ctx = canvas.getContext("2d");
 
-      let dinoY = 150;
+      // Pantalla completa
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      snoopyImg = new Image();
+      snoopyImg.src = "sticker-png-snoopy-thumbnail.png"; // Asegúrate de que esta imagen esté disponible
+
+      isJumping = false;
+      jumpHeight = 0;
+      obstacleX = canvas.width;
+      obstacleSpeed = 5;
+      score = 0;
+      dinoY = canvas.height - 90;
 
       document.addEventListener("keydown", function (e) {
         if (e.code === "Space" && !isJumping) {
@@ -102,57 +146,65 @@
         }
       });
 
-      interval = setInterval(() => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Dibuja obstáculo (cuadro rojo)
-        ctx.fillStyle = "red";
-        ctx.fillRect(obstacleX, 160, 20, 40);
-        obstacleX -= obstacleSpeed;
-
-        // Si el obstáculo sale de la pantalla, reinícialo y aumenta la velocidad
-        if (obstacleX < -20) {
-          obstacleX = 600;
-          score++;
-          obstacleSpeed += 0.3; // aumenta la velocidad poco a poco
-        }
-
-        // Lógica de salto
-        if (isJumping) {
-          jumpHeight += 5;
-          dinoY -= 5;
-          if (jumpHeight >= 50) {
-            isJumping = false;
-          }
-        } else if (dinoY < 150) {
-          jumpHeight -= 5;
-          dinoY += 5;
-        }
-
-        // Dibuja a Snoopy como personaje
-        ctx.drawImage(snoopyImg, 50, dinoY, 40, 40);
-
-        // Suelo
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 190, 600, 10);
-
-        // Puntaje
-        ctx.fillStyle = "black";
-        ctx.font = "16px Arial";
-        ctx.fillText("Puntaje: " + score, 500, 20);
-
-        // Colisión
-        if (
-          obstacleX < 90 &&
-          obstacleX + 20 > 50 &&
-          dinoY > 140
-        ) {
-          clearInterval(interval);
-          alert("¡Perdiste! Puntaje final: " + score);
-          location.reload();
-        }
-      }, 30);
+      interval = setInterval(juegoLoop, 30);
     }
+
+    function juegoLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Dibuja obstáculo
+      ctx.fillStyle = "red";
+      ctx.fillRect(obstacleX, canvas.height - 60, 30, 40);
+      obstacleX -= obstacleSpeed;
+
+      if (obstacleX < -30) {
+        obstacleX = canvas.width;
+        score++;
+        obstacleSpeed += 0.5;
+      }
+
+      // Salto
+      if (isJumping) {
+        jumpHeight += 8;
+        dinoY -= 8;
+        if (jumpHeight >= 80) {
+          isJumping = false;
+        }
+      } else if (dinoY < canvas.height - 90) {
+        jumpHeight -= 8;
+        dinoY += 8;
+      }
+
+      // Dibuja a Snoopy
+      ctx.drawImage(snoopyImg, 50, dinoY, 50, 50);
+
+      // Suelo
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
+
+      // Puntaje
+      ctx.fillStyle = "black";
+      ctx.font = "20px Arial";
+      ctx.fillText("Puntaje: " + score, canvas.width - 150, 30);
+
+      // Colisión
+      if (
+        obstacleX < 100 &&
+        obstacleX + 30 > 50 &&
+        dinoY > canvas.height - 100
+      ) {
+        clearInterval(interval);
+        mostrarPantalla("pantalla-fin");
+        document.getElementById("textoPuntaje").innerText = "¡Perdiste! Puntaje final: " + score;
+      }
+    }
+
+    function reiniciarJuego() {
+      mostrarPantalla("pantalla-inicio");
+    }
+
+    // Inicia con pantalla de inicio
+    mostrarPantalla("pantalla-inicio");
   </script>
 
 </body>
