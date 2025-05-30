@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Página de la persona mas dramatica de TAMSA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Página de la persona más dramática de TAMSA</title>
   <style>
     * {
       box-sizing: border-box;
@@ -33,18 +34,119 @@
       text-align: center;
       color: #333;
       padding: 0 20px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 1.2rem;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #game-container {
+      display: none;
+      margin-top: 30px;
+    }
+
+    #gameCanvas {
+      background-color: white;
+      border: 2px solid #000;
     }
   </style>
 </head>
 <body>
 
-  <!-- Cambia la ruta de esta imagen por la tuya -->
-  <img class="imagen-principal" src="lamasdramas.jpg" alt="Imagen Principal">
+  <img class="imagen-principal" src="lamasdramas.jpg" alt="La persona más dramática de TAMSA">
 
-  <!-- Texto grande debajo -->
   <div class="texto-grande">
-    Esta persona es la mas dramatica de TENARIS TAMSA
+    Esta persona es la más dramática de TENARIS TAMSA
   </div>
+
+  <button onclick="startGame()">¡Jugar!</button>
+
+  <div id="game-container">
+    <canvas id="gameCanvas" width="600" height="200"></canvas>
+  </div>
+
+  <script>
+    let isJumping = false;
+    let jumpHeight = 0;
+    let obstacleX = 600;
+    let score = 0;
+    let interval;
+
+    function startGame() {
+      document.getElementById("game-container").style.display = "block";
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      let dinoY = 150;
+
+      document.addEventListener("keydown", function (e) {
+        if (e.code === "Space" && !isJumping) {
+          isJumping = true;
+        }
+      });
+
+      interval = setInterval(() => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Obstáculo
+        ctx.fillStyle = "red";
+        ctx.fillRect(obstacleX, 160, 20, 40);
+        obstacleX -= 5;
+        if (obstacleX < -20) {
+          obstacleX = 600;
+          score++;
+        }
+
+        // Dino
+        if (isJumping) {
+          jumpHeight += 5;
+          dinoY -= 5;
+          if (jumpHeight >= 50) {
+            isJumping = false;
+          }
+        } else if (dinoY < 150) {
+          jumpHeight -= 5;
+          dinoY += 5;
+        }
+
+        ctx.fillStyle = "green";
+        ctx.fillRect(50, dinoY, 40, 40);
+
+        // Suelo
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 190, 600, 10);
+
+        // Score
+        ctx.fillStyle = "black";
+        ctx.font = "16px Arial";
+        ctx.fillText("Puntaje: " + score, 500, 20);
+
+        // Colisión
+        if (
+          obstacleX < 90 &&
+          obstacleX > 50 &&
+          dinoY > 140
+        ) {
+          clearInterval(interval);
+          alert("¡Perdiste! Puntaje final: " + score);
+          location.reload();
+        }
+      }, 30);
+    }
+  </script>
 
 </body>
 </html>
