@@ -83,10 +83,11 @@
     let jumpHeight = 0;
     let obstacleX = 600;
     let score = 0;
+    let obstacleSpeed = 5;
     let interval;
 
     const snoopyImg = new Image();
-    snoopyImg.src = 'sticker-png-snoopy-thumbnail.png'; // Asegúrate que la imagen esté en la misma carpeta
+    snoopyImg.src = 'sticker-png-snoopy-thumbnail.png'; // Reemplaza con la ruta de tu imagen de Snoopy
 
     function startGame() {
       document.getElementById("game-container").style.display = "block";
@@ -104,15 +105,19 @@
       interval = setInterval(() => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Dibuja obstáculo (Snoopy)
-        ctx.drawImage(snoopyImg, obstacleX, 130, 40, 60);
-        obstacleX -= 5;
-        if (obstacleX < -40) {
+        // Dibuja obstáculo (cuadro rojo)
+        ctx.fillStyle = "red";
+        ctx.fillRect(obstacleX, 160, 20, 40);
+        obstacleX -= obstacleSpeed;
+
+        // Si el obstáculo sale de la pantalla, reinícialo y aumenta la velocidad
+        if (obstacleX < -20) {
           obstacleX = 600;
           score++;
+          obstacleSpeed += 0.3; // aumenta la velocidad poco a poco
         }
 
-        // Dino (el cuadrado verde que salta)
+        // Lógica de salto
         if (isJumping) {
           jumpHeight += 5;
           dinoY -= 5;
@@ -124,23 +129,23 @@
           dinoY += 5;
         }
 
-        ctx.fillStyle = "green";
-        ctx.fillRect(50, dinoY, 40, 40);
+        // Dibuja a Snoopy como personaje
+        ctx.drawImage(snoopyImg, 50, dinoY, 40, 40);
 
         // Suelo
         ctx.fillStyle = "black";
         ctx.fillRect(0, 190, 600, 10);
 
-        // Score
+        // Puntaje
         ctx.fillStyle = "black";
         ctx.font = "16px Arial";
         ctx.fillText("Puntaje: " + score, 500, 20);
 
-        // Colisión (básica)
+        // Colisión
         if (
           obstacleX < 90 &&
-          obstacleX + 40 > 50 &&
-          dinoY > 130
+          obstacleX + 20 > 50 &&
+          dinoY > 140
         ) {
           clearInterval(interval);
           alert("¡Perdiste! Puntaje final: " + score);
