@@ -93,7 +93,7 @@
     <div class="texto-grande">
       Esta persona es la más dramática de TENARIS TAMSA
     </div>
-    <button onclick="iniciarJuego()">¡Jugar!</button>
+    <button onclick="iniciarJuego()">\u00a1Jugar!</button>
   </div>
 
   <!-- Pantalla de juego -->
@@ -109,12 +109,12 @@
 
   <script>
     let canvas, ctx, snoopyImg, interval;
-    let isJumping = false;
-    let jumpHeight = 0;
-    let obstacleX = 600;
-    let obstacleSpeed = 5;
+    let gravity = 2, lift = 20, velocity = 0;
+    let isJumping = false, onGround = true;
     let score = 0;
-    let dinoY = 150;
+    let obstacles = [];
+    let obstacleSpeed = 8;
+    let snoopyY = 0;
 
     function mostrarPantalla(id) {
       document.querySelectorAll(".pantalla").forEach(div => div.style.display = "none");
@@ -125,58 +125,76 @@
       mostrarPantalla("pantalla-juego");
       canvas = document.getElementById("gameCanvas");
       ctx = canvas.getContext("2d");
-
-      // Pantalla completa
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      snoopyY = canvas.height - 90;
+      obstacles = [];
+      score = 0;
+      obstacleSpeed = 8;
 
       snoopyImg = new Image();
-      snoopyImg.src = "sticker-png-snoopy-thumbnail.png"; // Asegúrate de que esta imagen esté disponible
-
-      isJumping = false;
-      jumpHeight = 0;
-      obstacleX = canvas.width;
-      obstacleSpeed = 5;
-      score = 0;
-      dinoY = canvas.height - 90;
+      snoopyImg.src = "sticker-png-snoopy-thumbnail.png";
 
       document.addEventListener("keydown", function (e) {
-        if (e.code === "Space" && !isJumping) {
-          isJumping = true;
+        if (e.code === "Space" && onGround) {
+          velocity = -lift;
+          onGround = false;
         }
       });
 
       interval = setInterval(juegoLoop, 30);
     }
 
+    function crearObstaculo() {
+      obstacles.push({ x: canvas.width, y: canvas.height - 60, width: 30, height: 40 });
+    }
+
     function juegoLoop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Dibuja obstáculo
-      ctx.fillStyle = "red";
-      ctx.fillRect(obstacleX, canvas.height - 60, 30, 40);
-      obstacleX -= obstacleSpeed;
+      // Física de salto
+      velocity += gravity;
+      snoopyY += velocity;
 
-      if (obstacleX < -30) {
-        obstacleX = canvas.width;
-        score++;
-        obstacleSpeed += 0.5;
+      if (snoopyY > canvas.height - 90) {
+        snoopyY = canvas.height - 90;
+        velocity = 0;
+        onGround = true;
       }
 
-      // Salto
-      if (isJumping) {
-        jumpHeight += 8;
-        dinoY -= 8;
-        if (jumpHeight >= 80) {
-          isJumping = false;
+      // Obstáculos
+      if (Math.random() < 0.02) crearObstaculo();
+
+      for (let i = 0; i < obstacles.length; i++) {
+        const obs = obstacles[i];
+        obs.x -= obstacleSpeed;
+
+        ctx.fillStyle = "red";
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+        // Colisión
+        if (
+          obs.x < 100 &&
+          obs.x + obs.width > 50 &&
+          snoopyY + 50 > obs.y
+        ) {
+          clearInterval(interval);
+          mostrarPantalla("pantalla-fin");
+          document.getElementById("textoPuntaje").innerText = "\u00a1Perdiste! Puntaje final: " + score;
+          return;
         }
-      } else if (dinoY < canvas.height - 90) {
-        jumpHeight -= 8;
-        dinoY += 8;
+
+        // Pasa obstáculo
+        if (obs.x + obs.width < 0) {
+          obstacles.splice(i, 1);
+          i--;
+          score++;
+          obstacleSpeed += 0.5;
+        }
       }
 
-      // Dibuja a Snoopy
-      ctx.drawImage(snoopyImg, 50, dinoY, 50, 50);
+      // Snoopy
+      ctx.drawImage(snoopyImg, 50, snoopyY, 50, 50);
 
       // Suelo
       ctx.fillStyle = "black";
@@ -186,24 +204,12 @@
       ctx.fillStyle = "black";
       ctx.font = "20px Arial";
       ctx.fillText("Puntaje: " + score, canvas.width - 150, 30);
-
-      // Colisión
-      if (
-        obstacleX < 100 &&
-        obstacleX + 30 > 50 &&
-        dinoY > canvas.height - 100
-      ) {
-        clearInterval(interval);
-        mostrarPantalla("pantalla-fin");
-        document.getElementById("textoPuntaje").innerText = "¡Perdiste! Puntaje final: " + score;
-      }
     }
 
     function reiniciarJuego() {
       mostrarPantalla("pantalla-inicio");
     }
 
-    // Inicia con pantalla de inicio
     mostrarPantalla("pantalla-inicio");
   </script>
 
